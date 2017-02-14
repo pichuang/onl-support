@@ -1,0 +1,7 @@
+#!/usr/bin/python
+import os 
+
+# TODO:
+# Defined the tarball directory
+# Dump /etc /var
+#
