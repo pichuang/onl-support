@@ -2,15 +2,16 @@
 # -*- coding: utf-8 -*-
 
 from shutil import copytree, ignore_patterns, copy
+from onl.platform.current import OnlPlatform
 import errno
 import subprocess
+import os
 
 __author__ = "Phil Huang"
 __email__ = "phil_huang@edge-core.com"
 
-# TODO: Re-defined variable
-MACHINE_NAME = "AS5712"  # TODO: Detect from onl-sysconfig
-TAR_NAME = "onl-support-" + MACHINE_NAME
+platform_name = OnlPlatform().PLATFORM
+TAR_NAME = "onl-support-" + platform_name
 TAR_ROOT = "/tmp/" + TAR_NAME
 COMMAND_ROOT = TAR_ROOT + "/support/"
 
@@ -28,22 +29,25 @@ def copy_dir(src_dir):
         pass
 
 
-def dump_command(command, *args):
-    if not args:
-        dest = COMMAND_ROOT + command  # Filename using command name
-    else:
-        dest = COMMAND_ROOT + args[0]  # Create new filename
+def dump_command(command, new_filename=None):
 
+    # Create directory if not exists
+    if not os.path.exists(COMMAND_ROOT):
+        os.makedirs(COMMAND_ROOT)
+
+    # Defined filename
+    if new_filename:
+        dest = COMMAND_ROOT + new_filename  # Create new filename
+    else:
+        dest = COMMAND_ROOT + command  # Filename using command name
+
+    # Output result
     try:
-        log_file = open(dest, "w")
+        log_file = open(dest, "w+")
+        command = command.split()  # str() split to `list`
         proc = subprocess.Popen(command,
                                 stdout=log_file,
-                                stderr=subprocess.PIPE)
-
-        # Redirect stderr to log_file
-        for line in proc.stderr:
-            log_file.wirte(line)
-
+                                stderr=log_file)
         proc.wait()
         log_file.close()
     except Exception as e:
@@ -51,13 +55,26 @@ def dump_command(command, *args):
 
 
 if __name__ == '__main__':
-    # TODO: Command list using `list` syntax
 
-    copy_dir_list = ['/etc', '/var', '/mnt/onl']
+    copy_dir_list = ['/etc',
+                     '/var',
+                     '/mnt/onl']
+
+    dump_command_list = [ 'onl-sysconfig',
+                          'lsmod',
+                          'ifconfig',
+                          ['ps aux', 'ps.result']]
+
     for dir_name in copy_dir_list:
         copy_dir(dir_name)
         print('Dump directory {} '.format(dir_name))
 
-        # TODO: dump_command [date, ifconfig, uptime, lsmod]
+    for command in dump_command_list:
 
-        # dump_command("onl-sysconfig")
+        if isinstance(command, str):
+            dump_command(command)
+        elif isinstance(command, list):
+            dump_command(command[0], command[1])
+        print('Dump command {} '.format(command))
+
+
