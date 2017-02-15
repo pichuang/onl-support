@@ -6,38 +6,47 @@ from onl.platform.current import OnlPlatform
 import errno
 import subprocess
 import os
+import logging
+import sys
+import tarfile
 
-__author__ = "Phil Huang"
-__email__ = "phil_huang@edge-core.com"
+BASE_ROOT = "/tmp/"
 
-platform_name = OnlPlatform().PLATFORM
-TAR_NAME = "onl-support-" + platform_name
-TAR_ROOT = "/tmp/" + TAR_NAME
-COMMAND_ROOT = TAR_ROOT + "/support/"
+DIR_NAME = "onl-support-" + OnlPlatform().PLATFORM
+DIR_ROOT = BASE_ROOT + DIR_NAME
+COMMAND_ROOT = DIR_ROOT + "/support/"
+TARFILE_NAME = DIR_NAME + ".tar.gz"
+TARFILE = BASE_ROOT + TARFILE_NAME
 
+# Set logger
+logger = logging.getLogger('onl-support')
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+logger.addHandler(ch)
 
 def copy_dir(src_dir):
-    dest = TAR_ROOT + src_dir
+    dest = DIR_ROOT + src_dir
     try:
-        copytree(src_dir, dest, symlinks=False, ignore=ignore_patterns('alternatives'))
+        copytree(src_dir, dest, symlinks=False, ignore=ignore_patterns('alternatives', '*.deb', '*.swi'))
     except OSError as e:
         if e.errno == errno.ENOTDIR:
             copy(src_dir, dest)
         else:
-            print('Directory not copied. Error: {}'.format(e))
+            logger.debug('Directory not copied. Error: {}'.format(e))
     except:
         pass
 
 
-def dump_command(command, new_filename=None):
+def dump_command(command, output_filename=None):
 
     # Create directory if not exists
     if not os.path.exists(COMMAND_ROOT):
         os.makedirs(COMMAND_ROOT)
 
     # Defined filename
-    if new_filename:
-        dest = COMMAND_ROOT + new_filename  # Create new filename
+    if output_filename:
+        dest = COMMAND_ROOT + output_filename  # Create new filename
     else:
         dest = COMMAND_ROOT + command  # Filename using command name
 
@@ -51,30 +60,45 @@ def dump_command(command, new_filename=None):
         proc.wait()
         log_file.close()
     except Exception as e:
-        print('Failed to open file: {}'.format(e))
+        logger.debug('Failed to open file: {}'.format(e))
 
-
-if __name__ == '__main__':
+def main():
 
     copy_dir_list = ['/etc',
-                     '/var',
+                     '/var/log',
                      '/mnt/onl']
 
     dump_command_list = [ 'onl-sysconfig',
                           'lsmod',
                           'ifconfig',
-                          ['ps aux', 'ps.result']]
+                          'dmesg',
+                          'uptime',
+                          'df',
+                          'blkid',
+                          'onlpdump',
+                          'onl-platform-show',
+                          ['ntpdc -p', 'ntpdc.result'],
+                          ['ps auxww', 'ps.result'],
+                          ]
 
     for dir_name in copy_dir_list:
         copy_dir(dir_name)
-        print('Dump directory {} '.format(dir_name))
+        logger.debug('Dump directory {} '.format(dir_name))
 
     for command in dump_command_list:
-
         if isinstance(command, str):
             dump_command(command)
         elif isinstance(command, list):
             dump_command(command[0], command[1])
-        print('Dump command {} '.format(command))
+        logger.debug('Dump command {} '.format(command))
 
+    # Tarfile
+    logger.info("Processing...")
+    with tarfile.open(TARFILE, "w:gz") as tar:
+        tar.add(DIR_ROOT, arcname=os.path.basename(DIR_ROOT))
+
+    logger.info("Support tarball created: {}".format(TARFILE))
+
+if __name__ == "__main__":
+    main()
 
