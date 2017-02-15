@@ -7,7 +7,6 @@ import errno
 import subprocess
 import os
 import logging
-import sys
 import tarfile
 
 BASE_ROOT = "/tmp/"
@@ -22,8 +21,9 @@ TARFILE = BASE_ROOT + TARFILE_NAME
 logger = logging.getLogger('onl-support')
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 logger.addHandler(ch)
+
 
 def copy_dir(src_dir):
     dest = DIR_ROOT + src_dir
@@ -34,12 +34,9 @@ def copy_dir(src_dir):
             copy(src_dir, dest)
         else:
             logger.debug('Directory not copied. Error: {}'.format(e))
-    except:
-        pass
 
 
 def dump_command(command, output_filename=None):
-
     # Create directory if not exists
     if not os.path.exists(COMMAND_ROOT):
         os.makedirs(COMMAND_ROOT)
@@ -62,25 +59,26 @@ def dump_command(command, output_filename=None):
     except Exception as e:
         logger.debug('Failed to open file: {}'.format(e))
 
-def main():
 
+def main():
     copy_dir_list = ['/etc',
                      '/var/log',
                      '/mnt/onl']
 
-    dump_command_list = [ 'onl-sysconfig',
-                          'lsmod',
-                          'ifconfig',
-                          'dmesg',
-                          'uptime',
-                          'df',
-                          'blkid',
-                          'onlpdump',
-                          'onl-platform-show',
-                          ['ntpdc -p', 'ntpdc.result'],
-                          ['ps auxww', 'ps.result'],
-                          ]
+    dump_command_list = ['onl-sysconfig',
+                         'lsmod',
+                         'ifconfig',
+                         'dmesg',
+                         'uptime',
+                         'df',
+                         'blkid',
+                         'onlpdump',
+                         'onl-platform-show',
+                         ['ntpdc -p', 'ntpdc.result'],
+                         ['ps auxww', 'ps.result'],
+                         ]
 
+    logger.info("Dump Information...")
     for dir_name in copy_dir_list:
         copy_dir(dir_name)
         logger.debug('Dump directory {} '.format(dir_name))
@@ -99,6 +97,6 @@ def main():
 
     logger.info("Support tarball created: {}".format(TARFILE))
 
+
 if __name__ == "__main__":
     main()
-
