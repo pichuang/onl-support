@@ -23,7 +23,7 @@ def copy_dir(src_dir):
         if e.errno == errno.ENOTDIR:
             copy(src_dir, dest)
         else:
-            print('Directory not copied. Error: %s' % e)
+            print('Directory not copied. Error: {}'.format(e))
     except:
         pass
 
@@ -46,7 +46,7 @@ def dump_command(command, *args):
         proc.wait()
         log_file.close()
     except Exception as e:
-        print('Failed to open file: %s' % e)
+        print('Failed to open file: {}'.format(e))
 
 
 if __name__ == '__main__':
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     copy_dir_list = ['/etc', '/var', '/mnt/onl']
     for dir_name in copy_dir_list:
         copy_dir(dir_name)
-        print('Dump directory %s ' % dir_name)
+        print('Dump directory {} '.format(dir_name))
 
     # TODO: dump_command [date, ifconfig, uptime, lsmod]
 
