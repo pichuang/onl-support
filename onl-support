@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import shutil
+from shutil import copytree, ignore_patterns
 import errno
 import subprocess
 
@@ -18,13 +18,14 @@ COMMAND_ROOT = TAR_ROOT + "/support/"
 def copy_dir(src_dir):
     dest = TAR_ROOT + src_dir
     try:
-        shutil.copytree(src_dir, dest)
+        copytree(src_dir, dest, symlinks=False, ignore=ignore_patterns('alternatives'))
     except OSError as e:
         if e.errno == errno.ENOTDIR:
-            shutil.copy(src_dir, dest)
+            copy(src_dir, dest)
         else:
             print('Directory not copied. Error: %s' % e)
-
+    except:
+        pass
 
 def dump_command(command, *args):
     if not args:
@@ -51,9 +52,11 @@ def dump_command(command, *args):
 if __name__ == '__main__':
     # TODO: Command list using `list` syntax
 
-    # TODO: copy_dir ["/etc", "/var", "/mnt/onl"]
-    copy_dir("/etc")
+    copy_dir_list = ['/etc', '/var', '/mnt/onl']
+    for dir_name in copy_dir_list:
+        copy_dir(dir_name)
+        print('Dump directory %s ' % dir_name)
 
     # TODO: dump_command [date, ifconfig, uptime, lsmod]
 
-    dump_command("onl-sysconfig")
+    #dump_command("onl-sysconfig")
