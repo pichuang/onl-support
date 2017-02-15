@@ -8,34 +8,52 @@ import subprocess
 __author__ = "Phil Huang"
 __email__ = "phil_huang@edge-core.com"
 
+# TODO: Re-defined variable
 MACHINE_NAME = "AS5712"  # TODO: Detect from onl-sysconfig
 TAR_NAME = "onl-support-" + MACHINE_NAME
 TAR_ROOT = "/tmp/" + TAR_NAME
 COMMAND_ROOT = TAR_ROOT + "/support/"
 
 
-def copy_dir(src):
-    dest = TAR_ROOT + src
+def copy_dir(src_dir):
+    dest = TAR_ROOT + src_dir
     try:
-        shutil.copytree(src, dest)
+        shutil.copytree(src_dir, dest)
     except OSError as e:
         if e.errno == errno.ENOTDIR:
-            shutil.copy(src, dest)
+            shutil.copy(src_dir, dest)
         else:
             print('Directory not copied. Error: %s' % e)
 
 
-def dump_command(command):
-    output = COMMAND_ROOT + command
-    proc = subprocess.Popen(command,
-                            stdout=output,
-                            stderr=subprocess.PIPE)
-    # for line in proc.stderr:
-    #     output.wirte(line)
-    proc.wait()
+def dump_command(command, *args):
+    if not args:
+        dest = COMMAND_ROOT + command  # Filename using command name
+    else:
+        dest = COMMAND_ROOT + args[0]  # Create new filename
+
+    try:
+        log_file = open(dest, "w")
+        proc = subprocess.Popen(command,
+                                stdout=log_file,
+                                stderr=subprocess.PIPE)
+
+        # Redirect stderr to log_file
+        for line in proc.stderr:
+            log_file.wirte(line)
+
+        proc.wait()
+        log_file.close()
+    except Exception as e:
+        print('Failed to open file: %s' % e)
 
 
 if __name__ == '__main__':
+    # TODO: Command list using `list` syntax
+
+    # TODO: copy_dir ["/etc", "/var", "/mnt/onl"]
     copy_dir("/etc")
-    copy_dir("/var")
+
+    # TODO: dump_command [date, ifconfig, uptime, lsmod]
+
     dump_command("onl-sysconfig")
